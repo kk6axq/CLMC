@@ -1,29 +1,32 @@
 /**
- * File: PID_Manager.ino
- * Author: Lukas Severinghaus
- * Date: October 11, 2020
- * Purpose: Interfaces with PID control library.
- * 
- * License:
- * Copyright (C) 2020  Lukas Severinghaus
- * 
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License version 3
- * as published by the Free Software Foundation; 
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- */
+   File: PID_Manager.ino
+   Author: Lukas Severinghaus
+   Date: October 11, 2020
+   Purpose: Interfaces with PID control library.
+
+   License:
+   Copyright (C) 2020  Lukas Severinghaus
+
+   This program is free software; you can redistribute it and/or
+   modify it under the terms of the GNU General Public License version 3
+   as published by the Free Software Foundation;
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
 /**
- * Sources referenced during development:
- * Filter: https://dsp.stackexchange.com/questions/41854/low-pass-filter-algorithm-origin
- */
+   Sources referenced during development:
+   Filter: https://dsp.stackexchange.com/questions/41854/low-pass-filter-algorithm-origin
+*/
+
+#define TUNE_ERROR "Not currently in tuning mode."
+byte tune_mode = TUNE_NONE;
 
 //Constant velocity error is change in position for right now + error from last period
 #define CONSTANT_ACC 0
@@ -58,7 +61,7 @@ double pos_setpoint = 0;
 double vel_setpoint = 0;
 double acc_setpoint = 0;
 
-int current_state = RAW;
+byte current_state = RAW;
 
 void init_pid() {
   position_controller.begin();
@@ -91,14 +94,14 @@ void update_pid() {
   }
 }
 
-int get_pid_output(){
-  if(current_state == CONSTANT_ACC){
+int get_pid_output() {
+  if (current_state == CONSTANT_ACC) {
     return acceleration_controller.getOutput();
-  }else if(current_state == CONSTANT_VEL){
+  } else if (current_state == CONSTANT_VEL) {
     return velocity_controller.getOutput();
-  }else if(current_state == CONSTANT_POS){
+  } else if (current_state == CONSTANT_POS) {
     return position_controller.getOutput();
-  }else{
+  } else {
     return 0; //Fail safe, if in raw mode.
   }
 }
@@ -117,139 +120,183 @@ void constant_vel(float vel) {
   velocity_controller.setpoint(vel);
 }
 
-void constant_acc(float acc){
+void constant_acc(float acc) {
   set_state(CONSTANT_ACC);
   acc_setpoint = acc;
   acceleration_controller.setpoint(acc);
 }
 
 /**** Setpoint getters ****/
-int get_pos_setpoint(){
+int get_pos_setpoint() {
   return pos_setpoint;
 }
 
-int get_vel_setpoint(){
+int get_vel_setpoint() {
   return vel_setpoint;
 }
 
-int get_acc_setpoint(){
+int get_acc_setpoint() {
   return acc_setpoint;
 }
 /**** Position PID modifiers ****/
-void pos_p(float p){
+void pos_p(float p) {
   pos_kp = p;
   update_pos_tune();
 }
 
-void pos_i(float i){
+float pos_p() {
+  return pos_kp;
+}
+void pos_i(float i) {
   pos_ki = i;
   update_pos_tune();
 }
 
-void pos_d(float d){
+float pos_i() {
+  return pos_ki;
+}
+
+void pos_d(float d) {
   pos_kd = d;
   update_pos_tune();
 }
 
-void update_pos_tune(){
+float pos_d() {
+  return pos_kd;
+}
+
+void update_pos_tune() {
   position_controller.tune(pos_kp, pos_ki, pos_kd);
 }
 /**** Velocity PID modifiers ****/
-void vel_p(float p){
+void vel_p(float p) {
   vel_kp = p;
   update_vel_tune();
 }
 
-void vel_i(float i){
+float vel_p() {
+  return vel_kp;
+}
+
+void vel_i(float i) {
   vel_ki = i;
   update_vel_tune();
 }
 
-void vel_d(float d){
+float vel_i() {
+  return vel_ki;
+}
+
+void vel_d(float d) {
   vel_kd = d;
   update_vel_tune();
 }
 
-void update_vel_tune(){
+float vel_d() {
+  return vel_kd;
+}
+
+void update_vel_tune() {
   velocity_controller.tune(vel_kp, vel_ki, vel_kd);
 }
 /**** Acceleration PID modifiers ****/
-void acc_p(float p){
+void acc_p(float p) {
   acc_kp = p;
   update_acc_tune();
 }
 
-void acc_i(float i){
+float acc_p() {
+  return acc_kp;
+}
+
+void acc_i(float i) {
   acc_ki = i;
   update_acc_tune();
 }
 
-void acc_d(float d){
+float acc_i() {
+  return acc_ki;
+}
+
+void acc_d(float d) {
   acc_kd = d;
   update_acc_tune();
 }
 
-void update_acc_tune(){
+float acc_d() {
+  return acc_kd;
+}
+
+void update_acc_tune() {
   acceleration_controller.tune(acc_kp, acc_ki, acc_kd);
 }
 
-void tune_p(float p){
-  #ifdef TUNE_POS
-  pos_kp = p;
-  update_pos_tune();
-  #endif
-  #ifdef TUNE_VEL
-  vel_kp = p;
-  update_vel_tune();
-  #endif
-  #ifdef TUNE_ACC
-  acc_kp = p;
-  update_acc_tune();
-  #endif
+void tune_p(float p) {
+  if (tune_mode == TUNE_POS) {
+    pos_kp = p;
+    update_pos_tune();
+  } else if (tune_mode == TUNE_VEL) {
+    vel_kp = p;
+    update_vel_tune();
+  } else if (tune_mode == TUNE_ACC) {
+    acc_kp = p;
+    update_acc_tune();
+  }
 }
 
-void tune_i(float i){
-  #ifdef TUNE_POS
-  pos_ki = i;
-  update_pos_tune();
-  #endif
-  #ifdef TUNE_VEL
-  vel_ki = i;
-  update_vel_tune();
-  #endif
-  #ifdef TUNE_ACC
-  acc_ki = i;
-  update_acc_tune();
-  #endif
+void tune_i(float i) {
+  if (tune_mode == TUNE_POS) {
+    pos_ki = i;
+    update_pos_tune();
+  } else if (tune_mode == TUNE_VEL) {
+    vel_ki = i;
+    update_vel_tune();
+  } else if (tune_mode == TUNE_ACC) {
+    acc_ki = i;
+    update_acc_tune();
+  }
 }
 
-void tune_d(float d){
-  #ifdef TUNE_POS
-  pos_kd = d;
-  update_pos_tune();
-  #endif
-  #ifdef TUNE_VEL
-  vel_kd = d;
-  update_vel_tune();
-  #endif
-  #ifdef TUNE_ACC
-  acc_kd = d;
-  update_acc_tune();
-  #endif
+void tune_d(float d) {
+  if (tune_mode == TUNE_POS) {
+    pos_kd = d;
+    update_pos_tune();
+  } else if (tune_mode == TUNE_VEL) {
+    vel_kd = d;
+    update_vel_tune();
+  } else if (tune_mode == TUNE_ACC) {
+    acc_kd = d;
+    update_acc_tune();
+  } else {
+    Serial.println(TUNE_ERROR);
+  }
 }
 //Sets the setpoint of the currently active tune.
-#if defined (TUNE_POS) || defined (TUNE_VEL)
-void command_tune(int val){
-  #ifdef TUNE_POS
-  constant_pos(val);
-  #elif defined (TUNE_VEL)
-  constant_vel(val);
-  #endif
+void command_tune(float val) {
+  if (tune_mode == TUNE_POS) {
+    constant_pos(val);
+  } else if (tune_mode == TUNE_VEL) {
+    constant_vel(val);
+  } else if (tune_mode == TUNE_ACC) {
+    constant_acc(val);
+  } else {
+    Serial.println(TUNE_ERROR);
+  }
+
 }
-#else
-void command_tune(float val){
-  #ifdef TUNE_ACC
-  constant_acc(val);
-  #endif
+
+byte get_PID_current_state() {
+  return current_state;
 }
-#endif
+
+void set_PID_current_state(byte state) {
+  current_state = state;
+}
+
+byte get_tune_mode() {
+  return tune_mode;
+}
+
+void set_tune_mode(byte b) {
+  tune_mode = b;
+}
