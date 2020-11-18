@@ -90,7 +90,7 @@ void loop() {
         Serial.println("No tuning mode currently set.");
       }
     } else if (s == 't') { //Set controller to tune.
-      delay(50);//Wait for second character to arrive.
+      serial_wait_timeout(1, 20);
       char a = Serial.read();
       Serial.println(a);
       if (a == 'p') {
@@ -167,7 +167,17 @@ void loop() {
   if (control) command_motor(get_pid_output());
 
 }
-
+/**
+ * Waits for serial bytes, or timeout, whichever comes first.
+ * len: number of bytes to wait for.
+ * timeout: timeout in ms to wait for bytes.
+ * Returns nothing.
+ */
+void serial_wait_timeout(int len, int timeout){
+  long start_t = millis();
+  while(Serial.available() < len && millis() < timeout + start_t);
+  Serial.print("Waited: "); Serial.println(millis() - start_t);
+}
 bool get_control() {
   return control;
 }
