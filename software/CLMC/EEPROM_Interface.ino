@@ -93,10 +93,20 @@ void set_config(CLMC_Config c){
 void load_config(){
   CLMC_Config c;
   EEPROM.get(config_address, c);
+  if(c.id == EEPROM_KEY){
   set_config(c); 
+  }else{
+    Serial.println("Error: EEPROM did not verify");
+  }
 }
 
 void save_config(){
   CLMC_Config c = get_config();
   EEPROM.put(config_address, c);
+}
+
+void print_EEPROM(){
+  CLMC_Config c;
+  EEPROM.get(config_address, c);
+  Serial.print("ID: "); Serial.println(c.id);
 }

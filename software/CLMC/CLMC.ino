@@ -22,7 +22,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 //Uncomment to load config and PIDs from EEPROM on boot.
-//#define LOAD_CONFIG_ON_BOOT
+#define LOAD_CONFIG_ON_BOOT
 
 //Serial baud rate
 #define BAUD_RATE 9600
@@ -51,9 +51,9 @@ void setup() {
     digitalWrite(LED_PIN, LOW);
     delay(100);
   }
-  #ifdef LOAD_CONFIG_ON_BOOT
+#ifdef LOAD_CONFIG_ON_BOOT
   load_config();
-  #endif
+#endif
 }
 
 //Flag for enabling motor output.
@@ -90,13 +90,16 @@ void loop() {
         Serial.println("No tuning mode currently set.");
       }
     } else if (s == 't') { //Set controller to tune.
-      if (s == 'p') {
+      delay(50);//Wait for second character to arrive.
+      char a = Serial.read();
+      Serial.println(a);
+      if (a == 'p') {
         Serial.println("Selecting position controller");
         set_tune_mode(TUNE_POS);
-      } else if (s == 'v') {
+      } else if (a == 'v') {
         Serial.println("Selecting velocity controller");
         set_tune_mode(TUNE_VEL);
-      } else if (s == 'a') {
+      } else if (a == 'a') {
         Serial.println("Selecting acceleration controller");
         set_tune_mode(TUNE_ACC);
       } else {
@@ -105,14 +108,18 @@ void loop() {
       }
     } else if (s == 'j') {
       set_inst_vel_filter(Serial.parseFloat());
-    } else if (s == 'l'){
+    } else if (s == 'l') {
       Serial.println("Loading config from EEPROM");
       load_config();
-    } else if (s == 's'){
+    } else if (s == 'k') {
       Serial.println("Saving config to EEPROM");
       save_config();
+    } else if (s == 'z') {
+      print_pids();
+    } else if (s == 'x') {
+      print_EEPROM();
     } else if (s == 'h') {
-      Serial.println("**** Commands ****");
+      Serial.println("\n**** Commands ****");
       Serial.println("r<int>\tConstant Position");
       Serial.println("f<int>\tConstant Velocity");
       Serial.println("v<float>\tConstant Acceleration");
@@ -123,12 +130,13 @@ void loop() {
       Serial.println("i<float>\tSet I component of tuned controller");
       Serial.println("d<float>\tSet D component of tuned controller");
       Serial.println("j<float>\tSet strength of velocity particle filter");
-      Serial.println("s\tSave configuration to EEPROM");
+      Serial.println("z\tPrint PID values");
+      Serial.println("x\tPrint EEPROM values");
+      Serial.println("k\tSave configuration to EEPROM");
       Serial.println("l\tLoad configuration from EEPROM");
       Serial.println("h\tShow help menu");
     }
   }
-
 
 
   //Diagnostic output:
@@ -138,9 +146,9 @@ void loop() {
   Serial.print("\tInst_acc: ");
   Serial.print(get_inst_acceleration());
 
-  if(get_tune_mode() == TUNE_POS){
-  Serial.print("\tAbs_pos: ");
-  Serial.print(get_raw_count());
+  if (get_tune_mode() == TUNE_POS) {
+    Serial.print("\tAbs_pos: ");
+    Serial.print(get_raw_count());
   }
   //Setpoints
   Serial.print("\tPos_set: ");
@@ -160,10 +168,10 @@ void loop() {
 
 }
 
-bool get_control(){
+bool get_control() {
   return control;
 }
 
-void set_control(bool val){
+void set_control(bool val) {
   control = val;
 }

@@ -300,3 +300,22 @@ byte get_tune_mode() {
 void set_tune_mode(byte b) {
   tune_mode = b;
 }
+
+void print_pids(){
+  Serial.println("**** PID Values ****");
+  Serial.println("Position: ");
+  Serial.print("\tP:"); Serial.println(pos_kp);
+  Serial.print("\tI:"); Serial.println(pos_ki);  
+  Serial.print("\tD:"); Serial.println(pos_kd);
+  Serial.println("");
+  Serial.println("Velocity: ");
+  Serial.print("\tP:"); Serial.println(vel_kp);
+  Serial.print("\tI:"); Serial.println(vel_ki);  
+  Serial.print("\tD:"); Serial.println(vel_kd);
+  Serial.println("");
+  Serial.println("Acceleration: ");
+  Serial.print("\tP:"); Serial.println(acc_kp);
+  Serial.print("\tI:"); Serial.println(acc_ki);  
+  Serial.print("\tD:"); Serial.println(acc_kd);
+  Serial.println("**** End PID Values ****");  
+}
